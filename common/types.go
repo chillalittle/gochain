@@ -118,16 +118,6 @@ func (h *Hash) SetBytes(b []byte) {
 	copy(h[HashLength-len(b):], b)
 }
 
-// Set string `s` to h. If s is larger than len(h) s will be cropped (from left) to fit.
-func (h *Hash) SetString(s string) { h.SetBytes([]byte(s)) }
-
-// Sets h to other
-func (h *Hash) Set(other Hash) {
-	for i, v := range other {
-		h[i] = v
-	}
-}
-
 // Generate implements testing/quick.Generator.
 func (h Hash) Generate(rand *rand.Rand, size int) reflect.Value {
 	m := rand.Intn(len(h))
@@ -236,7 +226,7 @@ func (a Address) Hex() string {
 	return "0x" + string(result)
 }
 
-// String implements the stringer interface and is used also by the logger.
+// String implements fmt.Stringer.
 func (a Address) String() string {
 	return a.Hex()
 }
@@ -254,16 +244,6 @@ func (a *Address) SetBytes(b []byte) {
 		b = b[len(b)-AddressLength:]
 	}
 	copy(a[AddressLength-len(b):], b)
-}
-
-// Set string `s` to a. If s is larger than len(a) it will panic
-func (a *Address) SetString(s string) { a.SetBytes([]byte(s)) }
-
-// Sets a to other
-func (a *Address) Set(other Address) {
-	for i, v := range other {
-		a[i] = v
-	}
 }
 
 // MarshalText returns the hex representation of a.

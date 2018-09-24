@@ -149,17 +149,19 @@ func (f *Feed) SendCtx(ctx context.Context, value interface{}) (nsent int) {
 
 	f.once.Do(f.init)
 	<-f.sendLock
+	defer func() {
+		f.sendLock <- struct{}{}
+	}()
 
 	// Add new cases from the inbox after taking the send lock.
 	f.mu.Lock()
 	f.sendCases = append(f.sendCases, f.inbox...)
 	f.inbox = nil
-
-	if !f.typecheck(rvalue.Type()) {
-		f.sendLock <- struct{}{}
+	tc := f.typecheck(rvalue.Type())
+	f.mu.Unlock()
+	if !tc {
 		panic(feedTypeError{op: "Send", got: rvalue.Type(), want: f.etype})
 	}
-	f.mu.Unlock()
 
 	// Set the sent value on all channels.
 	for i := firstSubSendCase; i < len(f.sendCases); i++ {
@@ -217,7 +219,6 @@ func (f *Feed) SendCtx(ctx context.Context, value interface{}) (nsent int) {
 	for i := firstSubSendCase; i < len(f.sendCases); i++ {
 		f.sendCases[i].Send = reflect.Value{}
 	}
-	f.sendLock <- struct{}{}
 	return nsent
 }
 
